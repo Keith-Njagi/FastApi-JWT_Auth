@@ -1,7 +1,7 @@
 import os
 
 import jwt
-from fastapi import HTTPException, Security
+from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
@@ -16,13 +16,16 @@ class AuthHandler():
     pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
     secret = SECRET_KEY
 
-    def get_password_hash(self, password:str):
-        return self.pwd_context.hash(password)
+    @classmethod
+    async def get_password_hash(cls, password:str):
+        return cls.pwd_context.hash(password)
 
-    def verify_password(self, plain_password:str, hashed_password:str):
-        return self.pwd_context.verify(plain_password, hashed_password)
+    @classmethod
+    async def verify_password(cls, plain_password:str, hashed_password:str):
+        return cls.pwd_context.verify(plain_password, hashed_password)
 
-    def encode_token(self, username:str, privileges:str):
+    @classmethod
+    async def encode_token(cls, username:str, privileges:str):
         is_admin:bool = False
         if privileges == 'Admin' or privileges == 'Super Admin':
             is_admin = True
@@ -42,17 +45,19 @@ class AuthHandler():
             
         }
 
-        return jwt.encode(payload, self.secret, algorithm=ALGORITHM)
+        return jwt.encode(payload, cls.secret, algorithm=ALGORITHM)
 
-    def decode_token(self, token:str):
+    @classmethod
+    def decode_token(cls, token:str):
         try:
-            payload = jwt.decode(token, self.secret, algorithms=[ALGORITHM])
+            payload = jwt.decode(token, cls.secret, algorithms=[ALGORITHM])
             return payload['sub']
         except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=401,detail='Signature has expired')
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORISED,detail='Signature has expired')
         except jwt.InvalidTokenError as e:
             print(f'============================== \\n Auth Error: {e} \\n ==============================')
-            raise HTTPException(status_code=401, detail='Invalid token')
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORISED, detail='Invalid token')
 
-    def auth_wrapper(self, auth:HTTPAuthorizationCredentials = Security(security)):
-        return self.decode_token(auth.credentials)
+    @classmethod
+    def auth_wrapper(cls, auth:HTTPAuthorizationCredentials = Security(security)):
+        return cls.decode_token(auth.credentials)

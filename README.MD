@@ -15,7 +15,7 @@ openssl rand -hex 32
 Then export it to your environment in terminal as so:
 
 ```
-export $SECRET_KEY=ca05b35bd405406b575941d6a43e4ab2b21b969b540c914fb5cc1b7429095ea0
+export SECRET_KEY=ca05b35bd405406b575941d6a43e4ab2b21b969b540c914fb5cc1b7429095ea0
 ```
 
 NOTE: The above secret key is just a sample. Do not use it in production.
